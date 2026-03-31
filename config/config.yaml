@@ -1,0 +1,15 @@
+paths:
+  raw_data_dir: "data/raw"
+  processed_data: "data/processed/amazon_fashion_cleaned.parquet"
+  word2vec_model: "models/amazon_word2vec.model"
+files:
+  meta_data: "meta_Amazon_Fashion.jsonl"
+  reviews_data: "amazon_fashion_review.jsonl"
+
+spark:
+  app_name: "Amazon_Fashion_ETL"
+  driver_memory: "4g"
+
+model:
+  name: "sentence-transformers/all-MiniLM-L6-v2"
+  vector_size: 384

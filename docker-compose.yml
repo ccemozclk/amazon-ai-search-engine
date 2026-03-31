@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+  
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: amazon_qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
+    restart: always
+    networks:
+      - amazon_network
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/6333'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  
+  redis:
+    image: redis:alpine
+    container_name: amazon_redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"  
+    volumes:
+      - redis_data_amazon:/data
+    restart: always
+    networks:
+      - amazon_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: amazon_prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    restart: always
+    networks:
+      - amazon_network
+
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: amazon_grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data_amazon:/var/lib/grafana
+    restart: always
+    networks:
+      - amazon_network
+
+
+  etl:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    container_name: amazon_etl_worker
+    user: root
+    command: python -m src.pipelines.vector_ingestion
+
+    restart: on-failure
+    depends_on:
+      qdrant:
+        condition: service_healthy 
+    environment:
+      - QDRANT_HOST=qdrant
+    volumes:
+      - ./data:/app/data
+    networks:
+      - amazon_network
+
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    container_name: amazon_api
+    ports:
+      - "8001:8001"
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy 
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./logs:/app/logs
+      - ./models:/app/models
+    restart: always
+    networks:
+      - amazon_network
+
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    container_name: amazon_ui
+    ports:
+      - "8501:8501" 
+    depends_on:
+      - backend
+    environment:
+      - BACKEND_URL=http://backend:8001
+    restart: always
+    networks:
+      - amazon_network
+
+
+volumes:
+  redis_data_amazon:
+  grafana_data_amazon:
+
+networks:
+  amazon_network:
+    driver: bridge
