@@ -18,4 +18,5 @@ models/
 
 
 logs/
-.env
+.envqdrant_db/ 
+qdrant_storage/ 
