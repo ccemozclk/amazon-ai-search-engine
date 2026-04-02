@@ -1,22 +1,28 @@
-
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 
-
-embedding_project_new/
+# Environment & secrets
+.env
 venv/
 env/
 
+# IDE / workspace artifacts
+embedding_project_new/
+
+# Raw & processed data (too large for Git)
 data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 
+# Trained model weights (generated, large binaries) — root-level only
+/models/
 
-models/
-
-
+# Logs (generated at runtime)
 logs/
-.envqdrant_db/ 
-qdrant_storage/ 
+
+# Vector database storage (generated at runtime)
+qdrant_db/
+qdrant_storage/

@@ -32,7 +32,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 
 RUN groupadd -r amazon_app && useradd -r -g amazon_app -d /home/amazon_user -m amazon_user
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 COPY --from=builder /opt/venv /opt/venv
 
@@ -44,6 +43,6 @@ RUN chown -R amazon_user:amazon_app /app
 USER amazon_user
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8001/metrics || exit 1
+  CMD curl -f http://localhost:8001/health || exit 1
 
 CMD ["uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "1"]

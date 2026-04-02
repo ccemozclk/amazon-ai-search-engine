@@ -5,3 +5,12 @@ scrape_configs:
   - job_name: 'amazon_api'
     static_configs:
       - targets: ['backend:8001']
+
+  - job_name: 'qdrant'
+    static_configs:
+      - targets: ['qdrant:6333']
+    metrics_path: '/metrics'
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis_exporter:9121']

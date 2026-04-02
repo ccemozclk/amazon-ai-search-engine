@@ -21,7 +21,7 @@ class Word2VecIngestion:
         self.model_path = os.path.join(self.base_dir, self.config["paths"]["word2vec_model"])
         
         
-        self.collection_name = "amazon_fashion_w2v"
+        self.collection_name = self.config["qdrant"]["collection_w2v"]
         
         print("Word2Vec Model is Loading...")
         self.w2v_model = Word2Vec.load(self.model_path)
@@ -40,25 +40,30 @@ class Word2VecIngestion:
         else:
             return np.zeros(self.w2v_model.vector_size).tolist()
 
-    def run(self, limit=5000):
-        print(f"Data Is Reading")
-        df = pd.read_parquet(self.processed_data_path).head(limit)
-
-        
+    def run(self, limit=None):
         if self.client.collection_exists(self.collection_name):
+            count = self.client.count(self.collection_name).count
+            if count > 0:
+                print(f"Collection '{self.collection_name}' already has {count} vectors. Skipping ingestion.")
+                return
             self.client.delete_collection(self.collection_name)
-        
+
+        print(f"Data Is Reading")
+        df = pd.read_parquet(self.processed_data_path)
+        if limit:
+            df = df.head(limit)
+
         self.client.create_collection(
             collection_name=self.collection_name,
             vectors_config=models.VectorParams(size=self.w2v_model.vector_size, distance=models.Distance.COSINE),
         )
 
         documents = df["document"].tolist()
-        ids = df["parent_asin"].fillna(pd.Series(df.index).astype(str)).tolist()
+        ids = df["parent_asin"].fillna(pd.Series(range(len(df)), index=df.index).astype(str)).tolist()
         payloads = df[["title", "price", "parent_asin", "average_rating", "review_count"]].to_dict(orient="records")
 
         batch_size = 64
-        for i in tqdm(range(0, len(documents), batch_size), desc="Word2Vec Vektörleri Qdrant'a Yükleniyor"):
+        for i in tqdm(range(0, len(documents), batch_size), desc="Uploading Word2Vec vectors to Qdrant"):
             batch_docs = documents[i : i + batch_size]
             embeddings = [self.get_document_embedding(doc) for doc in batch_docs]
             
@@ -70,4 +75,4 @@ class Word2VecIngestion:
         print("✅ Word2Vec data has been successfully uploaded to Qdrant!")
 
 if __name__ == "__main__":
-    Word2VecIngestion().run(limit=5000)
+    Word2VecIngestion().run()

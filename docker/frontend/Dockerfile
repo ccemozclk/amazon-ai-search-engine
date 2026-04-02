@@ -28,9 +28,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-
-
 RUN groupadd -r amazon_app && useradd -r -g amazon_app -d /home/amazon_user -m amazon_user
 
 COPY --from=builder /opt/venv /opt/venv

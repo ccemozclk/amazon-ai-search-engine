@@ -1,7 +1,6 @@
 import os
 import sys
 import platform
-import sys
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, concat_ws, trim, avg, count, round
 
@@ -64,7 +63,7 @@ class AmazonDataPipeline:
 
         print("Joining Meta and Review datasets...")
         df_joined = df_meta_clean.join(df_reviews_agg, on="parent_asin", how="left")
-        df_joined = df_joined.fillna({"average_rating": 0.0, "review_count": 0})
+        df_joined = df_joined.fillna({"average_rating": 0.0, "review_count": 0, "price": 0.0})
         
         df_final = df_joined.select("parent_asin", "title", "document", "price", "average_rating", "review_count")
         

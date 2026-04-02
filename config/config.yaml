@@ -2,6 +2,9 @@ paths:
   raw_data_dir: "data/raw"
   processed_data: "data/processed/amazon_fashion_cleaned.parquet"
   word2vec_model: "models/amazon_word2vec.model"
+  item2vec_model: "models/amazon_item2vec.model"
+  lstm_model: "models/amazon_lstm.pth"
+  lstm_vocab: "models/lstm_vocab.json"
 files:
   meta_data: "meta_Amazon_Fashion.jsonl"
   reviews_data: "amazon_fashion_review.jsonl"
@@ -13,3 +16,8 @@ spark:
 model:
   name: "sentence-transformers/all-MiniLM-L6-v2"
   vector_size: 384
+  word2vec_vector_size: 128
+
+qdrant:
+  collection_st: "amazon_fashion"
+  collection_w2v: "amazon_fashion_w2v"
